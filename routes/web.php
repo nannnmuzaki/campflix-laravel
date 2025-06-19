@@ -7,9 +7,19 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Volt::route('/films/{filmId}', 'films.show')->name('films.show');
+
+Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+    Route::get('admin', fn () => redirect()->route('admin.films.index'))->name('admin.index');
+
+    Volt::route('admin/films', 'admin.films.index')->name('admin.films.index');
+    Volt::route('admin/add-film', 'admin.films.create')->name('admin.films.create');
+    Volt::route('admin/{filmId}/edit-film', 'admin.films.edit')->name('admin.films.edit');
+    
+    Volt::route('admin/jadwal', 'admin.jadwal.index')->name('admin.jadwal.index');
+    Volt::route('admin/add-jadwal', 'admin.jadwal.create')->name('admin.jadwal.create');
+    Volt::route('admin/{jadwalId}/edit', 'admin.jadwal.edit')->name('admin.jadwal.edit');
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
