@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('films', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('judul');
             $table->string('sutradara');
             $table->year('tahun');
-            $table->foreignId('genre_id')->constrained('genres')->onDelete('cascade');
+            $table->foreignUuid('genre_id')->constrained('genres')->onDelete('cascade');
             $table->timestamps();
         });
     }

@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('jadwal_tayang', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('film_id')->constrained('films')->onDelete('cascade');
-            $table->foreignId('studio_id')->constrained('studios')->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('film_id')->constrained('films')->onDelete('cascade');
+            $table->foreignUuid('studio_id')->constrained('studios')->onDelete('cascade');
             $table->date('tanggal');
             $table->time('jam');
             $table->timestamps();

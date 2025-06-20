@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tikets', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('jadwal_tayang_id')->constrained('jadwal_tayang')->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('jadwal_tayang_id')->constrained('jadwal_tayang')->onDelete('cascade');
             $table->decimal('harga', 10, 2);
             $table->enum('status', ['tersedia', 'terjual'])->default('tersedia');
             $table->timestamps();
