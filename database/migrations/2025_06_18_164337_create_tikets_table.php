@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('jadwal_tayang_id')->constrained('jadwal_tayang')->onDelete('cascade');
             $table->decimal('harga', 10, 2);
-            $table->enum('status', ['tersedia', 'terjual'])->default('tersedia');
+            $table->enum('status', ['tersedia', 'pending', 'terjual'])->default('tersedia');
             $table->timestamps();
         });
     }

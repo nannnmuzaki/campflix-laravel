@@ -3,9 +3,12 @@
 use App\Models\JadwalTayang;
 use App\Models\Tiket;
 use Livewire\Volt\Component;
-use Livewire\Attributes\{Layout};
+use Livewire\Attributes\{Layout, On};
 use Illuminate\View\View;
 use Mary\Traits\Toast;
+use Illuminate\Support\Facades\Auth;
+use Midtrans\Config;
+use Midtrans\Snap;
 
 new
     #[Layout('components.layouts.main')]
@@ -18,11 +21,12 @@ new
     public string $nomorKursi = '';
     public int $jumlahTiketTersisa = 0;
     public bool $showBuyDrawer = false;
+    public bool $snapModal = false;
 
     public function rendering(View $view): void
     {
         try {
-            $view->title($this->jadwal->film->judul . ' @ ' . $this->jadwal->jam);
+            $view->title($this->jadwal->film->judul . ' - ' . $this->jadwal->jam);
         } catch (\Exception $e) {
             $view->title('Detail Jadwal | Campflix');
         }
@@ -41,13 +45,14 @@ new
     public function updateJumlahTiketTersisa(): void
     {
         // Hitung ulang jumlah tiket yang tersedia
+        $this->jadwal->load('tikets');
         $this->jumlahTiketTersisa = $this->jadwal->tikets->where('status', 'tersedia')->count();
     }
 
-    public function updateNomorKursi(string $nomorkursi): void
+    public function updateNomorKursi(string $nomorKursi): void
     {
         // Update nomor kursi yang dipilih
-        $this->nomorKursi = $nomorkursi;
+        $this->nomorKursi = $nomorKursi;
     }
 
     /**
@@ -67,24 +72,124 @@ new
     }
 
 
-    public function buyTiket(string $tiketId): void
+    public function processPayment(string $tiketId): void
     {
-        // Logika untuk membeli tiket
-        // Rencana akan menggunakan midtrans payment gateway jika waktunya memungkinkan
-        // sementara mari gunakan logika sederhana saja
-        $tiket = $this->jadwal->tikets->firstWhere('id', $tiketId);
-        if ($tiket && $tiket->status == 'tersedia') {
-            $tiket->status = 'terjual';
-            $tiket->save();
-            $this->updateJumlahTiketTersisa(); // Refresh jadwal untuk update jumlah tiket tersisa
-            $this->showBuyDrawer = false; // Tutup drawer setelah pembelian
-            $this->Success('Tiket berhasil dibeli!', 'Pembelian Tiket');
-        } else {
-            $this->Error('Tiket tidak tersedia atau sudah terjual.');
+        // Validasi apakah pengguna sudah login
+        if (!Auth::check()) {
+            $this->Error('Gagal', 'Anda harus login untuk melakukan pembelian tiket.');
+            $this->showBuyDrawer = false;
             return;
+        }
+
+        // Validasi apakah tiket sudah dipilih
+        if (!$this->selectedTiket) {
+            $this->Error('Gagal', 'Silahkan pilih tiket terlebih dahulu.');
+            $this->showBuyDrawer = false;
+            return;
+        }
+
+        // Konfigurasi midtrans
+        Config::$serverKey = config('midtrans.server_key');
+        Config::$isProduction = config('midtrans.is_production');
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        // Generate order ID unik (dan nantinya seharusnya sih ini harus simpan di db, tapi karena gk ada disoal jadi sementara ngga dulu)
+        $orderId = 'CAMPFLIX-' . time();
+
+        // Parameter transaksi
+        $params = [
+            'transaction_details' => [
+                'order_id' => $orderId,
+                'gross_amount' => $this->selectedTiket->harga,
+            ],
+            'item_details' => [
+                [
+                    'id' => $this->selectedTiket->id,
+                    'price' => $this->selectedTiket->harga,
+                    'quantity' => 1,
+                    'name' => 'Tiket: ' . $this->jadwal->film->judul . ' (Kursi ' . $this->nomorKursi . ')',
+                ]
+            ],
+            'customer_details' => [
+                'first_name' => Auth::user()->name ?? 'Guest User',
+                'email' => Auth::user()->email ?? 'guest@example.com',
+            ],
+        ];
+
+        // Proses pembayaran dengan Midtrans Snap
+        try {
+            // request snap token
+            $snapToken = Snap::getSnapToken($params);
+
+            // Update status tiket menjadi 'pending'
+            $this->selectedTiket->status = 'pending';
+            $this->selectedTiket->save();
+
+            // Tutup drawer
+            $this->showBuyDrawer = false;
+
+            // Tampilkan modal snap
+            $this->snapModal = true; // Tampilkan modal snap
+
+            // Kirim token ke fronted untuk menampilkan popup midtrans snap
+            $this->dispatch('snap-show', token: $snapToken);
+
+        } catch (\Exception $e) {
+            $this->Error('Payment Gateway Error', 'Terjadi kesalahan saat memproses pembayaran: ' . $e->getMessage());
         }
     }
 
+    // #[On('payment-cancelled')] 
+    public function paymentCancelled()
+    {
+        // Kembalikan status tiket ke 'tersedia' jika pembayaran dibatalkan
+        if ($this->selectedTiket && $this->selectedTiket->status == 'pending') {
+            $this->selectedTiket->status = 'tersedia';
+            $this->selectedTiket->save();
+        }
+
+        $this->showBuyDrawer = false;
+        $this->updateJumlahTiketTersisa();
+        $this->toast(type: 'info', title: 'Pembayaran Dibatalkan');
+    }
+
+    #[On('payment-error')]
+    public function paymentError()
+    {
+        // Logika untuk menangani kesalahan pembayaran
+        if ($this->selectedTiket && $this->selectedTiket->status == 'pending') {
+            $this->selectedTiket->status = 'tersedia';
+            $this->selectedTiket->save();
+        }
+
+        $this->showBuyDrawer = false;
+        $this->updateJumlahTiketTersisa();
+        $this->toast(type: 'error', title: 'Pembayaran Gagal', description: 'Terjadi kesalahan saat memproses pembayaran.');
+    }
+
+    #[On('payment-pending')] 
+    public function paymentPending()
+    {
+        // Logika untuk menangani pembayaran yang masih pending
+        if ($this->selectedTiket && $this->selectedTiket->status == 'pending') {
+            $this->toast(type: 'info', title: 'Pembayaran Pending', description: 'Pembayaran Anda sedang dalam proses.');
+        }
+
+        $this->showBuyDrawer = false;
+    }
+
+    #[On('payment-success')]
+    public function paymentSuccess()
+    {
+        // Logika untuk menangani pembayaran sukses
+        $this->selectedTiket->status = 'terjual';
+        $this->selectedTiket->save();
+        $this->updateJumlahTiketTersisa();
+        $this->showBuyDrawer = false;
+        $this->snapModal = false;
+        $this->toast(type: 'success', title: 'Pembayaran Berhasil', description: 'Tiket Anda telah dibeli.');
+    }
 }; ?>
 
 <div
@@ -224,10 +329,15 @@ new
                         <x-slot:actions>
                             <x-mary-button class="rounded-lg" label="Batal" @click="$wire.buyDrawer = false" />
                             <x-mary-button class="btn-primary rounded-lg"
-                                wire:click="buyTiket('{{ $selectedTiket->id ?? '' }}')" label="Konfirmasi & Bayar"
+                                wire:click="processPayment('{{ $selectedTiket->id ?? '' }}')" label="Konfirmasi & Bayar"
                                 icon="o-check" />
                         </x-slot:actions>
                 </x-mary-drawer>
+
+                <x-modal wire:model="snapModal" class="border-0! shadow-none! bg-transparent!" @close="$wire.paymentCancelled()">
+                    <div id="snap-container" class="rounded-lg bg-transparent" wire:ignore>
+                        </div>
+                </x-modal>
             </div>
         </div>
     </div>

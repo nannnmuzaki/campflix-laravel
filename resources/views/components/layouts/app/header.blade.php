@@ -94,9 +94,42 @@
 
     {{ $slot }}
 
+    <x-mary-toast />
+
     @fluxScripts
 
-    <x-mary-toast />
+    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key="{{ config('midtrans.client_key') }}"></script>
+
+    <script type="text/javascript">
+        document.addEventListener('livewire:initialized', () => {
+
+            Livewire.on('snap-show', (event) => {
+                // Panggil snap.embed, bukan snap.pay
+                window.snap.embed(event.token, {
+                    embedId: 'snap-container', // Target div
+                    onSuccess: function (result) {
+                        console.log('Payment Success:', result);
+                        Livewire.dispatch('payment-success');
+                    },
+                    onPending: function (result) {
+                        console.log('Payment Pending:', result);
+                        // Anda bisa membuat listener khusus untuk 'payment-pending' jika perlu
+                        Livewire.dispatch('payment-success'); // Anggap saja sama dengan sukses untuk UI
+                    },
+                    onError: function (result) {
+                        console.log('Payment Error:', result);
+                        Livewire.dispatch('payment-error');
+                    },
+                    onClose: function () {
+                        // Saat pengguna menutup popup di dalam embed
+                        console.log('Customer closed the payment embed.');
+                        Livewire.dispatch('payment-cancelled');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>
