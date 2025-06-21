@@ -5,6 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Models\JadwalTayang;
 use App\Observers\JadwalTayangObserver;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,5 +25,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         JadwalTayang::observe(JadwalTayangObserver::class);
+
+        Gate::define('is-admin', function (User $user) {
+            return $user->role === 'admin';
+        });
     }
 }
