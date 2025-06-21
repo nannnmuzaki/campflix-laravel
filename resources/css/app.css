@@ -9,23 +9,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-
-    --color-zinc-50: #fafafa;
-    --color-zinc-100: #f5f5f5;
-    --color-zinc-200: #e5e5e5;
-    --color-zinc-300: #d4d4d4;
-    --color-zinc-400: #a3a3a3;
-    --color-zinc-500: #737373;
-    --color-zinc-600: #525252;
-    --color-zinc-700: #404040;
-    --color-zinc-800: #262626;
-    --color-zinc-900: #171717;
-    --color-zinc-950: #0a0a0a;
-
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
-    --color-accent-foreground: var(--color-white);
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 @layer theme {
@@ -64,3 +48,87 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+
+
+/**
+    The lines above are intact.
+    The lines below were added by maryUI installer.
+*/
+
+/** daisyUI */
+@plugin "daisyui" {
+    themes: cmyk --default, black --prefersdark;
+}
+
+/* maryUI */
+@source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";
+
+/* Theme toggle */
+@custom-variant dark (&:where(.dark, .dark *));
+
+.mary-table-pagination {
+    button, span {
+        @apply  text-xs border-none dark:text-white/90
+    }
+ 
+    button {
+        @apply cursor-pointer  dark:bg-neutral-900
+    }
+ 
+    span[aria-current="page"] > span {
+        @apply dark:bg-neutral-950
+    }
+
+    span[aria-hidden="true"] {
+        @apply dark:bg-neutral-900
+    }
+
+    button[aria-current="page"] {
+        @apply dark:bg-neutral-900
+    }
+  
+    button, span[aria-current="page"] > span, span[aria-disabled="true"] span {
+        @apply py-1 px-2
+    }
+
+    select {
+        @apply dark:bg-neutral-950 dark:text-white/90 dark:border-neutral-700! text-xs rounded-sm
+    }
+}
+
+.EasyMDEContainer h1 {
+    @apply text-4xl font-bold mb-5
+}
+ 
+.EasyMDEContainer h2 {
+    @apply text-2xl font-bold mb-3
+}
+ 
+.EasyMDEContainer h3 {
+    @apply text-lg font-bold mb-3
+}
+
+.EasyMDEContainer .CodeMirror {
+    @apply dark:bg-neutral-950 dark:text-white/90 dark:border-neutral-700!
+}
+ 
+.EasyMDEContainer .CodeMirror {
+    @apply dark:bg-neutral-950 dark:text-white/90
+}
+ 
+.EasyMDEContainer .CodeMirror-cursor {
+    @apply border dark:border-b-neutral-700
+}
+ 
+.EasyMDEContainer .editor-toolbar > button:hover, .EasyMDEContainer .editor-toolbar > .active {
+    @apply dark:bg-neutral-700 dark:text-white/90 dark:border-neutral-700!
+}
+
+.EasyMDEContainer .editor-toolbar { 
+    @apply dark:bg-neutral-900 dark:text-white/90 dark:border-neutral-700!
+}
+
+.EasyMDEContainer .editor-preview { 
+    @apply dark:bg-neutral-900 dark:text-white/90
+}
