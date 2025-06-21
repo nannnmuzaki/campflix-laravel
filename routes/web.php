@@ -5,7 +5,7 @@ use Livewire\Volt\Volt;
 
 Volt::route('/', 'index')->name('home');
 
-Volt::route('/jadwals/{jadwal}', 'jadwals.show')->name('jadwals.show');
+Volt::route('/jadwal/{jadwal}', 'jadwal-show')->name('jadwal.show');
 
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('admin', fn () => redirect()->route('admin.films.index'))->name('admin.index');

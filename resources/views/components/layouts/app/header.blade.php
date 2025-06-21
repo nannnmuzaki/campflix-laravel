@@ -95,6 +95,8 @@
     {{ $slot }}
 
     @fluxScripts
+
+    <x-mary-toast />
 </body>
 
 </html>
