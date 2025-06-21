@@ -19,6 +19,11 @@ class JadwalTayang extends Model
      *
      * @var array<int, string>
      */
+
+     protected $casts = [
+        'tanggal' => 'date',    
+    ];
+
     protected $fillable = [
         'film_id',
         'studio_id',
