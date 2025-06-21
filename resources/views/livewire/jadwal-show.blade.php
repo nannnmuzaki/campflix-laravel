@@ -168,7 +168,7 @@ new
         $this->toast(type: 'error', title: 'Pembayaran Gagal', description: 'Terjadi kesalahan saat memproses pembayaran.');
     }
 
-    #[On('payment-pending')] 
+    #[On('payment-pending')]
     public function paymentPending()
     {
         // Logika untuk menangani pembayaran yang masih pending
@@ -334,9 +334,10 @@ new
                         </x-slot:actions>
                 </x-mary-drawer>
 
-                <x-modal wire:model="snapModal" class="border-0! shadow-none! bg-transparent!" @close="$wire.paymentCancelled()">
+                <x-modal wire:model="snapModal" class="border-0! shadow-none! bg-transparent!"
+                    @close="paymentCancelled">
                     <div id="snap-container" class="rounded-lg bg-transparent" wire:ignore>
-                        </div>
+                    </div>
                 </x-modal>
             </div>
         </div>
